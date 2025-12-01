@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useParking } from '../store';
 import { Clock, DollarSign, LogOut, CheckCircle, Printer, X, Tag, Calculator, Search, CreditCard, Receipt } from 'lucide-react';
 import { Transaction, Vehicle } from '../types';
+import { SERVICES_DATA } from '../constants';
 
 const ExitList: React.FC = () => {
   const { activeVehicles, checkoutVehicle, rates } = useParking();
@@ -10,12 +11,7 @@ const ExitList: React.FC = () => {
   
   // Checkout Logic States
   const [confirmingVehicle, setConfirmingVehicle] = useState<Vehicle | null>(null);
-  const [extras, setExtras] = useState<{ [key: string]: boolean }>({
-      lostTicket: false,
-      carWash: false,
-      overnight: false,
-      valet: false
-  });
+  const [extras, setExtras] = useState<{ [key: string]: boolean }>({});
   const [discountPercent, setDiscountPercent] = useState(0);
   const [receipt, setReceipt] = useState<Transaction | null>(null);
 
@@ -23,16 +19,15 @@ const ExitList: React.FC = () => {
     v.plateNumber.includes(searchTerm.toUpperCase())
   );
 
-  const EXTRA_CHARGES: Record<string, { label: string; cost: number }> = {
-      lostTicket: { label: 'Lost Ticket Fine', cost: 20 },
-      carWash: { label: 'Car Wash Service', cost: 15 },
-      overnight: { label: 'Overnight Fee', cost: 30 },
-      valet: { label: 'Valet Service', cost: 10 }
-  };
-
   const handleInitiateCheckout = (vehicle: Vehicle) => {
       setConfirmingVehicle(vehicle);
-      setExtras({ lostTicket: false, carWash: false, overnight: false, valet: false });
+      // Pre-select services that were requested during entry
+      const initialExtras = SERVICES_DATA.reduce((acc, service) => {
+          acc[service.id] = vehicle.requestedServices?.includes(service.id) || false;
+          return acc;
+      }, {} as { [key: string]: boolean });
+      
+      setExtras(initialExtras);
       setDiscountPercent(0);
   };
 
@@ -43,17 +38,23 @@ const ExitList: React.FC = () => {
   const handleFinalizeCheckout = () => {
       if (!confirmingVehicle) return;
 
-      const extraItems = Object.entries(extras)
-        .filter(([_, isActive]) => isActive)
-        .map(([key, _]) => EXTRA_CHARGES[key].label);
+      const extraItems = SERVICES_DATA
+        .filter(s => extras[s.id])
+        .map(s => s.label);
       
-      const extraCost = Object.entries(extras)
-        .filter(([_, isActive]) => isActive)
-        .reduce((sum, [key, _]) => sum + EXTRA_CHARGES[key].cost, 0);
+      const extraCost = SERVICES_DATA
+        .filter(s => extras[s.id])
+        .reduce((sum, s) => sum + s.price, 0);
 
       const now = new Date();
-      const diffHrs = Math.ceil((now.getTime() - confirmingVehicle.entryTime.getTime()) / (1000 * 60 * 60));
-      const baseCost = diffHrs * rates[confirmingVehicle.type];
+      const diffMs = now.getTime() - confirmingVehicle.entryTime.getTime();
+      const diffMins = Math.ceil(diffMs / 60000);
+      const diffHrs = Math.ceil(diffMins / 60);
+      
+      // Calculate by minute
+      const hourlyRate = rates[confirmingVehicle.type];
+      const baseCost = (diffMins * (hourlyRate / 60));
+
       const subTotal = baseCost + extraCost;
       const discountAmount = (subTotal * discountPercent) / 100;
 
@@ -71,21 +72,28 @@ const ExitList: React.FC = () => {
   };
 
   const getPreviewCosts = () => {
-      if (!confirmingVehicle) return { base: 0, extra: 0, total: 0, hours: 0, discount: 0 };
+      if (!confirmingVehicle) return { base: 0, extra: 0, total: 0, hours: 0, mins: 0, discount: 0 };
       
       const now = new Date();
-      const diffHrs = Math.ceil((now.getTime() - confirmingVehicle.entryTime.getTime()) / (1000 * 60 * 60));
-      const base = diffHrs * rates[confirmingVehicle.type];
+      const diffMs = now.getTime() - confirmingVehicle.entryTime.getTime();
+      const diffMins = Math.ceil(diffMs / 60000);
+      const diffHrs = Math.floor(diffMins / 60);
+      const minsRemainder = diffMins % 60;
       
-      const extra = Object.entries(extras)
-        .filter(([_, isActive]) => isActive)
-        .reduce((sum, [key, _]) => sum + EXTRA_CHARGES[key].cost, 0);
+      const hourlyRate = rates[confirmingVehicle.type];
+      const base = (diffMins * (hourlyRate / 60));
+      
+      const extra = SERVICES_DATA
+        .filter(s => extras[s.id])
+        .reduce((sum, s) => sum + s.price, 0);
 
       const sub = base + extra;
       const discount = (sub * discountPercent) / 100;
       
-      return { base, extra, total: sub - discount, hours: diffHrs, discount };
+      return { base, extra, total: sub - discount, hours: diffHrs, mins: minsRemainder, discount };
   };
+
+  const costs = getPreviewCosts();
 
   return (
     <div className="space-y-8 relative">
@@ -111,7 +119,7 @@ const ExitList: React.FC = () => {
                      </div>
                      <div className="text-right">
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Time Elapsed</div>
-                         <div className="text-2xl font-bold text-slate-800">{getPreviewCosts().hours} <span className="text-sm font-normal text-slate-500">hrs</span></div>
+                         <div className="text-2xl font-bold text-slate-800">{costs.hours}<span className="text-sm">:</span>{costs.mins.toString().padStart(2, '0')} <span className="text-sm font-normal text-slate-500">h:m</span></div>
                          <div className="text-xs text-slate-400">Rate: ${rates[confirmingVehicle.type]}/hr</div>
                      </div>
                  </div>
@@ -119,20 +127,22 @@ const ExitList: React.FC = () => {
                  {/* Extras Selector */}
                  <div className="mb-8">
                      <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">Add-ons & Fees</h4>
-                     <div className="grid grid-cols-2 gap-3">
-                         {Object.entries(EXTRA_CHARGES).map(([key, info]) => (
+                     <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                         {SERVICES_DATA.map((service) => (
                              <button
-                                key={key}
-                                onClick={() => toggleExtra(key)}
+                                key={service.id}
+                                onClick={() => toggleExtra(service.id)}
                                 className={`p-3 rounded-xl border text-sm font-medium transition-all flex justify-between items-center shadow-sm ${
-                                    extras[key] 
+                                    extras[service.id] 
                                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-indigo-200' 
                                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                 }`}
                              >
-                                 <span>{info.label}</span>
-                                 <span className={extras[key] ? 'font-bold' : 'text-slate-400'}>
-                                     +${info.cost}
+                                 <span className="flex items-center">
+                                    <span className="mr-2">{service.icon}</span> {service.label}
+                                 </span>
+                                 <span className={extras[service.id] ? 'font-bold' : 'text-slate-400'}>
+                                     +${service.price.toFixed(2)}
                                  </span>
                              </button>
                          ))}
@@ -159,16 +169,22 @@ const ExitList: React.FC = () => {
 
              <div className="p-5 bg-slate-50 border-t border-slate-200">
                  <div className="flex justify-between items-center mb-2 text-sm">
-                     <span className="text-slate-500">Subtotal</span>
-                     <span className="font-bold text-slate-700">${(getPreviewCosts().base + getPreviewCosts().extra).toFixed(2)}</span>
+                     <span className="text-slate-500">Parking Fee</span>
+                     <span className="font-bold text-slate-700">${costs.base.toFixed(2)}</span>
                  </div>
-                 <div className="flex justify-between items-center mb-4 text-sm">
-                     <span className="text-slate-500">Discount ({discountPercent}%)</span>
-                     <span className="font-bold text-green-600">-${getPreviewCosts().discount.toFixed(2)}</span>
+                 <div className="flex justify-between items-center mb-2 text-sm">
+                     <span className="text-slate-500">Extras</span>
+                     <span className="font-bold text-slate-700">${costs.extra.toFixed(2)}</span>
                  </div>
+                 {costs.discount > 0 && (
+                    <div className="flex justify-between items-center mb-4 text-sm">
+                        <span className="text-slate-500">Discount ({discountPercent}%)</span>
+                        <span className="font-bold text-green-600">-${costs.discount.toFixed(2)}</span>
+                    </div>
+                 )}
                  <div className="flex justify-between items-center mb-6 pt-4 border-t border-slate-200">
                      <span className="text-lg font-bold text-slate-800">Total To Pay</span>
-                     <span className="text-3xl font-extrabold text-indigo-600">${getPreviewCosts().total.toFixed(2)}</span>
+                     <span className="text-3xl font-extrabold text-indigo-600">${costs.total.toFixed(2)}</span>
                  </div>
                  
                  <button
@@ -213,17 +229,28 @@ const ExitList: React.FC = () => {
                                <span className="font-mono text-xs">{new Date(receipt.exitTime).toLocaleTimeString()}</span>
                            </div>
                            <div className="flex justify-between mb-2 text-sm pt-2 border-t border-slate-200 border-dashed mt-2">
-                               <span className="text-slate-500">Base Amount</span>
+                               <span className="text-slate-500">Base Parking</span>
                                <span>${receipt.baseAmount.toFixed(2)}</span>
                            </div>
                            {receipt.extraAmount > 0 && (
-                               <div className="flex justify-between mb-2 text-sm">
-                                   <span className="text-slate-500">Extras</span>
-                                   <span>+${receipt.extraAmount.toFixed(2)}</span>
+                               <div className="border-t border-slate-200 border-dashed mt-2 pt-2">
+                                   <div className="flex justify-between text-xs text-slate-400 mb-1 uppercase font-bold">Extras</div>
+                                   {receipt.items && receipt.items.map((item, idx) => (
+                                       <div key={idx} className="flex justify-between mb-1 text-sm text-slate-600">
+                                            <span>{item}</span>
+                                            {/* We don't store individual item price in transaction items array currently, just total extra amount. 
+                                                If strict itemized pricing is needed on receipt, store logic needs update. 
+                                                For now showing list + total extra. */}
+                                       </div>
+                                   ))}
+                                   <div className="flex justify-between text-sm font-bold text-slate-700 mt-1">
+                                       <span>Total Extras</span>
+                                       <span>+${receipt.extraAmount.toFixed(2)}</span>
+                                   </div>
                                </div>
                            )}
                            {receipt.discountAmount > 0 && (
-                               <div className="flex justify-between mb-2 text-sm text-green-600">
+                               <div className="flex justify-between mb-2 text-sm text-green-600 mt-2">
                                    <span className="font-medium">Discount</span>
                                    <span>-${receipt.discountAmount.toFixed(2)}</span>
                                </div>
@@ -279,8 +306,12 @@ const ExitList: React.FC = () => {
                 ) : (
                     filteredVehicles.map(vehicle => {
                         const now = new Date();
-                        const diffHrs = Math.ceil((now.getTime() - vehicle.entryTime.getTime()) / (1000 * 60 * 60));
-                        const currentCost = diffHrs * rates[vehicle.type];
+                        const diffMs = now.getTime() - vehicle.entryTime.getTime();
+                        const diffMins = Math.ceil(diffMs / 60000);
+                        const diffHrs = Math.floor(diffMins / 60);
+                        const minsRemainder = diffMins % 60;
+                        const hourlyRate = rates[vehicle.type];
+                        const currentCost = (diffMins * (hourlyRate / 60));
 
                         return (
                             <div key={vehicle.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
@@ -298,7 +329,7 @@ const ExitList: React.FC = () => {
                                     <div className="text-right">
                                         <div className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg text-sm inline-flex items-center">
                                             <Clock size={14} className="mr-1"/>
-                                            {diffHrs} hr
+                                            {diffHrs}:{minsRemainder.toString().padStart(2, '0')}
                                         </div>
                                     </div>
                                 </div>

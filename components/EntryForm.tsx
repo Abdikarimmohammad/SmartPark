@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParking } from '../store';
 import { VehicleType, Vehicle } from '../types';
-import { PlusCircle, AlertCircle, Printer, X, Check, CarFront, Palette, Phone, FileText } from 'lucide-react';
+import { PlusCircle, AlertCircle, Printer, X, Check, CarFront, Palette, Phone, FileText, Building, Wrench } from 'lucide-react';
+import QRCode from 'react-qr-code';
+import { SERVICES_DATA } from '../constants';
 
 const EntryForm: React.FC = () => {
-  const { registerVehicle, slots, activeVehicles } = useParking();
+  const { registerVehicle, slots, activeVehicles, currentBranch } = useParking();
   
   // Form State
   const [plate, setPlate] = useState('');
@@ -15,10 +17,25 @@ const EntryForm: React.FC = () => {
   const [contact, setContact] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   
   // UI State
   const [error, setError] = useState<string | null>(null);
   const [ticket, setTicket] = useState<Vehicle | null>(null);
+
+  const isOverview = currentBranch?.id === 'all';
+
+  if (isOverview) {
+      return (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white/50 rounded-3xl border border-white/20 shadow-xl backdrop-blur-md p-10">
+              <div className="bg-indigo-100 p-6 rounded-full text-indigo-600 mb-6 shadow-inner">
+                  <Building size={64} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Select a Specific Branch</h2>
+              <p className="text-slate-500 max-w-md">You cannot register a vehicle in 'Overview' mode. Please select a specific branch from the sidebar to proceed with vehicle entry.</p>
+          </div>
+      );
+  }
 
   const availableSlots = slots.filter(s => !s.isOccupied);
   
@@ -33,10 +50,24 @@ const EntryForm: React.FC = () => {
     }
   }, [slots]);
 
+  const toggleService = (id: string) => {
+      setSelectedServices(prev => 
+        prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+      );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!plate) return;
+
+    // Regex Validation for Plate (e.g., ABC-1234 or similar structure)
+    // Allow spaces, dashes, numbers, letters. Min 3 chars.
+    const plateRegex = /^[A-Z0-9\s-]{3,10}$/;
+    if (!plateRegex.test(plate.toUpperCase())) {
+        setError("Invalid license plate format. Use letters, numbers, and dashes (e.g. ABC-1234).");
+        return;
+    }
     
     // Validation: Duplicate Plate
     if (activeVehicles.some(v => v.plateNumber === plate.toUpperCase())) {
@@ -60,7 +91,8 @@ const EntryForm: React.FC = () => {
         model,
         color,
         contact,
-        notes
+        notes,
+        services: selectedServices
     }, selectedSlotId);
 
     if (vehicle) {
@@ -72,6 +104,7 @@ const EntryForm: React.FC = () => {
       setColor('');
       setNotes('');
       setType(VehicleType.CAR);
+      setSelectedServices([]);
       setSelectedSlotId(null);
     } else {
       setError('Failed to register vehicle. The selected slot might have just been taken.');
@@ -114,12 +147,28 @@ const EntryForm: React.FC = () => {
                     <span>{ticket.entryTime.toLocaleDateString()}</span>
                 </div>
 
-                <div className="w-full bg-slate-100 p-2 rounded text-[10px] text-slate-400 mb-2">
+                {ticket.requestedServices && ticket.requestedServices.length > 0 && (
+                    <div className="mb-6 text-left border-t border-slate-100 pt-2">
+                         <div className="text-xs font-bold text-slate-500 uppercase mb-1">Requested Services</div>
+                         <ul className="text-xs text-slate-700 space-y-1">
+                             {ticket.requestedServices.map(sid => {
+                                 const s = SERVICES_DATA.find(sd => sd.id === sid);
+                                 return s ? <li key={sid}>• {s.label}</li> : null;
+                             })}
+                         </ul>
+                    </div>
+                )}
+
+                <div className="w-full bg-slate-100 p-2 rounded text-[10px] text-slate-400 mb-4">
                     ID: {ticket.id}
                 </div>
-                <div className="w-32 h-32 bg-slate-900 mx-auto rounded-lg flex items-center justify-center text-white text-xs">
-                    [QR CODE]
+                
+                <div className="flex justify-center mb-2">
+                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                        <QRCode value={ticket.id} size={100} />
+                    </div>
                 </div>
+                <div className="text-[10px] text-slate-400">Scan at Exit Terminal</div>
              </div>
 
              <div className="bg-slate-50 p-4 flex gap-3 no-print">
@@ -215,42 +264,74 @@ const EntryForm: React.FC = () => {
                 </div>
             </div>
 
-            {/* Section 2: Slot Selection */}
-            <div>
-                 <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-400 mb-4 flex justify-between items-center">
-                    <span>Select Parking Slot</span>
-                    <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs normal-case">{availableSlots.length} available</span>
-                </h3>
-                
-                {availableSlots.length > 0 ? (
-                    <div className="border border-slate-200 rounded-xl bg-slate-50/50 p-4 max-h-56 overflow-y-auto custom-scrollbar shadow-inner">
-                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-                            {availableSlots.map((slot) => (
-                                <button
-                                    key={slot.id}
-                                    type="button"
-                                    onClick={() => setSelectedSlotId(slot.id)}
-                                    className={`
-                                        relative h-10 rounded-md text-sm font-bold border transition-all flex items-center justify-center
-                                        ${selectedSlotId === slot.id 
-                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-200 z-10' 
-                                            : slot.type === 'priority' 
-                                                ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
-                                        }
-                                    `}
-                                >
-                                    {slot.id}
-                                </button>
-                            ))}
+            {/* Section 2: Services & Slot */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-400 mb-4 flex items-center">
+                        <Wrench size={16} className="mr-1" /> Services
+                    </h3>
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-64 overflow-y-auto custom-scrollbar">
+                        {SERVICES_DATA.map(service => (
+                            <button
+                                key={service.id}
+                                type="button"
+                                onClick={() => toggleService(service.id)}
+                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                                    selectedServices.includes(service.id)
+                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                <span className="font-bold flex items-center text-sm">
+                                    <span className="mr-2 text-lg">{service.icon}</span> {service.label}
+                                </span>
+                                <div className="flex items-center">
+                                    <span className={`text-xs font-bold mr-2 ${selectedServices.includes(service.id) ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                        ${service.price.toFixed(2)}
+                                    </span>
+                                    {selectedServices.includes(service.id) ? <Check size={16} /> : <div className="w-4 h-4 rounded-full border border-slate-300"></div>}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-400 mb-4 flex justify-between items-center">
+                        <span>Select Parking Slot</span>
+                        <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs normal-case">{availableSlots.length} available</span>
+                    </h3>
+                    
+                    {availableSlots.length > 0 ? (
+                        <div className="border border-slate-200 rounded-xl bg-slate-50/50 p-4 max-h-64 overflow-y-auto custom-scrollbar shadow-inner">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                {availableSlots.map((slot) => (
+                                    <button
+                                        key={slot.id}
+                                        type="button"
+                                        onClick={() => setSelectedSlotId(slot.id)}
+                                        className={`
+                                            relative h-10 rounded-md text-sm font-bold border transition-all flex items-center justify-center
+                                            ${selectedSlotId === slot.id 
+                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-200 z-10' 
+                                                : slot.type === 'priority' 
+                                                    ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400 hover:text-indigo-600'
+                                            }
+                                        `}
+                                    >
+                                        {slot.id}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="p-6 bg-red-50 rounded-xl border border-red-100 text-center text-red-600 font-medium">
-                        <AlertCircle className="mx-auto mb-2" />
-                        No parking slots available.
-                    </div>
-                )}
+                    ) : (
+                        <div className="p-6 bg-red-50 rounded-xl border border-red-100 text-center text-red-600 font-medium">
+                            <AlertCircle className="mx-auto mb-2" />
+                            No parking slots available.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Section 3: Extra Info */}

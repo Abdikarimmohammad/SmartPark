@@ -1,20 +1,38 @@
 
 import React, { useState } from 'react';
 import { useParking } from '../store';
-import { Car, Bike, Truck, Info, X, Clock, DollarSign, Phone, Filter, MapPin, Check } from 'lucide-react';
+import { Car, Bike, Truck, Info, X, Clock, DollarSign, Phone, Filter, MapPin, Check, Building } from 'lucide-react';
 import { VehicleType, ParkingSlot as ParkingSlotType } from '../types';
 
 type FilterType = 'all' | 'car' | 'bike' | 'truck' | 'occupied' | 'empty';
 
 const ParkingLot: React.FC = () => {
-  const { slots, activeVehicles, checkoutVehicle, rates } = useParking();
+  const { slots, activeVehicles, checkoutVehicle, rates, currentBranch } = useParking();
   const [selectedSlot, setSelectedSlot] = useState<ParkingSlotType | null>(null);
   const [showReceipt, setShowReceipt] = useState<{ plate: string; amount: number; duration: number } | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
 
-  // Split slots into two zones
-  const zoneASlots = slots.slice(0, 20); // Slots 1-20
-  const zoneBSlots = slots.slice(20, 40); // Slots 21-40
+  const isOverview = currentBranch?.id === 'all';
+
+  if (isOverview) {
+      return (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white/50 rounded-3xl border border-white/20 shadow-xl backdrop-blur-md p-10">
+              <div className="bg-indigo-100 p-6 rounded-full text-indigo-600 mb-6 shadow-inner">
+                  <Building size={64} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Select a Specific Branch</h2>
+              <p className="text-slate-500 max-w-md">The parking map requires a specific physical location to display slots. Please select a branch from the sidebar to view its map.</p>
+          </div>
+      );
+  }
+
+  // Group slots by Zone ID
+  const slotsByZone = slots.reduce((acc, slot) => {
+      const zoneId = slot.zoneId || 'default';
+      if (!acc[zoneId]) acc[zoneId] = [];
+      acc[zoneId].push(slot);
+      return acc;
+  }, {} as Record<string, ParkingSlotType[]>);
 
   const getVehicleIcon = (type: VehicleType) => {
     switch(type) {
@@ -54,23 +72,19 @@ const ParkingLot: React.FC = () => {
       return true;
   };
 
-  const getSlotDistance = (id: number) => {
-      if(id <= 10) return "20m (Near Entrance)";
-      if(id <= 20) return "50m (Zone A)";
-      if(id <= 30) return "80m (Zone B)";
-      return "120m (Rear Exit)";
-  }
-
-  const SlotGrid = ({ data, zoneName }: { data: ParkingSlotType[], zoneName: string }) => (
-      <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg shadow-indigo-100 border border-white/50 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-purple-400"></div>
+  const SlotGrid: React.FC<{ data: ParkingSlotType[], zoneName: string, zoneType: string }> = ({ data, zoneName, zoneType }) => (
+      <div className="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg shadow-indigo-100 border border-white/50 relative overflow-hidden mb-8">
+          <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${zoneType === 'priority' ? 'from-amber-400 to-orange-400' : 'from-indigo-400 to-purple-400'}`}></div>
           <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-2">
             <h3 className="font-bold text-slate-800 flex items-center text-lg">
-                <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg mr-2"><MapPin size={18}/></span> {zoneName}
+                <span className={`p-1.5 rounded-lg mr-2 ${zoneType === 'priority' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <MapPin size={18}/>
+                </span> 
+                {zoneName}
             </h3>
             <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-500 uppercase tracking-wide border border-slate-200">Capacity: {data.length}</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {data.map((slot) => {
                 const vehicle = slot.vehicleId ? activeVehicles.find(v => v.id === slot.vehicleId) : null;
                 const visible = isSlotVisible(slot);
@@ -125,14 +139,13 @@ const ParkingLot: React.FC = () => {
     if (!selectedSlot) return null;
     const vehicle = selectedSlot.vehicleId ? activeVehicles.find(v => v.id === selectedSlot.vehicleId) : null;
     
-    // Calculate current stats if occupied
+    // Calculate current stats
     let currentCost = 0;
-    let durationHours = 0;
     if (vehicle) {
         const now = new Date();
         const diffMs = now.getTime() - vehicle.entryTime.getTime();
-        durationHours = Math.ceil(diffMs / (1000 * 60 * 60));
-        currentCost = durationHours * rates[vehicle.type];
+        const hours = Math.ceil(diffMs / (1000 * 60 * 60));
+        currentCost = hours * rates[vehicle.type];
     }
 
     return (
@@ -141,11 +154,9 @@ const ParkingLot: React.FC = () => {
           <div className="bg-gradient-to-r from-indigo-900 to-blue-900 px-6 py-5 flex justify-between items-center border-b border-indigo-800 relative">
             <div className="absolute inset-0 bg-white/5 opacity-30 pattern-grid"></div>
             <div className="relative z-10">
-                <h3 className="text-white font-bold text-lg flex items-center">
-                Slot #{selectedSlot.id}
-                </h3>
+                <h3 className="text-white font-bold text-lg flex items-center">Slot #{selectedSlot.id}</h3>
                 <p className="text-indigo-200 text-xs flex items-center mt-1 font-medium">
-                    <MapPin size={12} className="mr-1"/> {getSlotDistance(selectedSlot.id)}
+                    <MapPin size={12} className="mr-1"/> {selectedSlot.zoneName || 'General Zone'}
                 </p>
             </div>
             <button onClick={() => setSelectedSlot(null)} className="relative z-10 text-indigo-200 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2 rounded-full">
@@ -177,12 +188,7 @@ const ParkingLot: React.FC = () => {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => setSelectedSlot(null)}
-                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg"
-                  >
-                    Close
-                  </button>
+                  <button onClick={() => setSelectedSlot(null)} className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg">Close</button>
                </div>
             ) : (
                 <>
@@ -246,9 +252,7 @@ const ParkingLot: React.FC = () => {
                             <Car size={32} className="text-slate-300"/>
                         </div>
                         <h4 className="text-lg font-bold text-slate-700">Slot is Empty</h4>
-                        <p className="text-slate-400 text-sm mb-6">This parking space is currently available.</p>
-                        
-                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center">
+                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center mt-4">
                             <Check size={16} className="mr-2"/> Ready for use
                         </div>
                     </div>
@@ -290,19 +294,19 @@ const ParkingLot: React.FC = () => {
           </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 space-y-8">
-            <SlotGrid data={zoneASlots} zoneName="Zone A (Premium Entry)" />
-            
-            {/* Driveway Visual */}
-            <div className="h-16 flex items-center justify-center opacity-40">
-                <div className="w-full border-t-2 border-dashed border-slate-400 relative">
-                     <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-slate-200 px-3 py-0.5 rounded-full text-xs font-bold text-slate-500 uppercase tracking-widest">Driveway</span>
-                </div>
-            </div>
-
-            <SlotGrid data={zoneBSlots} zoneName="Zone B (Standard Rear)" />
-          </div>
+      <div className="flex flex-col gap-0">
+          {Object.keys(slotsByZone).length > 0 ? (
+             Object.keys(slotsByZone).map((zoneId) => {
+                 const zoneSlots = slotsByZone[zoneId];
+                 const zoneName = zoneSlots[0]?.zoneName || 'Unknown Zone';
+                 const zoneType = zoneSlots[0]?.type || 'standard';
+                 return (
+                     <SlotGrid key={zoneId} data={zoneSlots} zoneName={zoneName} zoneType={zoneType} />
+                 );
+             })
+          ) : (
+              <div className="text-center py-10 text-slate-400">No parking slots configured for this branch.</div>
+          )}
       </div>
     </div>
   );

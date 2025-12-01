@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LayoutDashboard, PlusSquare, Map, List, FileText, Sparkles, Menu, X, Settings as SettingsIcon, LogOut, Building, User, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, PlusSquare, Map, List, FileText, Sparkles, Menu, X, Settings as SettingsIcon, LogOut, Building, User, ChevronDown, Mail, Phone } from 'lucide-react';
 import { ParkingProvider, useParking } from './store';
 import Dashboard from './components/Dashboard';
 import EntryForm from './components/EntryForm';
@@ -48,7 +48,7 @@ const LoginScreen: React.FC = () => {
                     
                     {error && (
                         <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center">
-                            Invalid credentials. Try 'admin' or 'staff_downtown'.
+                            Invalid credentials. User not found.
                         </div>
                     )}
 
@@ -57,7 +57,7 @@ const LoginScreen: React.FC = () => {
                     </button>
 
                     <div className="text-center text-xs text-slate-400 mt-4">
-                        Demo Accounts: <b>admin</b>, <b>staff_downtown</b>, <b>staff_airport</b>
+                        Default Users: <b>admin</b>, <b>staff_downtown</b>
                     </div>
                 </form>
             </div>
@@ -106,7 +106,7 @@ const MainApp: React.FC = () => {
 
         {/* Sidebar */}
         <aside className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-indigo-950 via-slate-900 to-black text-slate-300 transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none border-r border-white/5
+          fixed lg:static inset-y-0 left-0 z-50 w-80 bg-gradient-to-b from-indigo-950 via-slate-900 to-black text-slate-300 transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none border-r border-white/5
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="h-full flex flex-col relative overflow-hidden">
@@ -131,8 +131,8 @@ const MainApp: React.FC = () => {
             </div>
 
             {/* Branch Switcher / Display */}
-            <div className="px-4 py-4 relative z-20">
-                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400/70 px-2">Current Branch</div>
+            <div className="px-6 py-6 relative z-20">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400/70">Current Branch</div>
                 
                 {user?.role === 'admin' ? (
                     <div className="relative">
@@ -149,6 +149,13 @@ const MainApp: React.FC = () => {
                         
                         {isBranchDropdownOpen && (
                             <div className="absolute top-full left-0 w-full mt-2 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+                                <button
+                                    onClick={() => { switchBranch('all'); setIsBranchDropdownOpen(false); }}
+                                    className={`w-full text-left px-4 py-3 text-sm hover:bg-white/5 flex items-center border-b border-white/5 ${currentBranch?.id === 'all' ? 'text-emerald-400 font-bold bg-white/5' : 'text-slate-300'}`}
+                                >
+                                    <Building size={14} className="mr-2"/>
+                                    All Branches (Overview)
+                                </button>
                                 {branches.map(b => (
                                     <button
                                         key={b.id}
@@ -171,8 +178,8 @@ const MainApp: React.FC = () => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar relative z-10">
-              <div className="px-4 mb-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400/70">Main Menu</div>
+            <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="px-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400/70">Main Menu</div>
               {navItems.map((item) => (
                 <button
                   key={item.id}
@@ -196,20 +203,39 @@ const MainApp: React.FC = () => {
             </nav>
 
             {/* User Profile / Logout */}
-            <div className="p-4 border-t border-white/10 relative z-10">
-              <div className="bg-white/5 rounded-xl p-3 border border-white/5 shadow-inner backdrop-blur-sm flex items-center justify-between">
-                <div className="flex items-center gap-3 overflow-hidden">
-                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold text-xs uppercase shadow-lg shrink-0">
-                       {user?.username.substr(0, 2)}
+            <div className="p-4 border-t border-white/10 relative z-10 bg-black/20">
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 shadow-inner backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-3">
+                   {user?.avatarUrl ? (
+                       <img src={user.avatarUrl} alt="User Avatar" className="w-10 h-10 rounded-full shadow-lg border-2 border-indigo-500/50 object-cover" />
+                   ) : (
+                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold text-sm uppercase shadow-lg">
+                           {user?.username.substr(0, 2)}
+                       </div>
+                   )}
+                   <div className="overflow-hidden flex-1">
+                       <div className="text-sm font-bold text-white truncate">{user?.fullName || user?.username}</div>
+                       <div className="text-[10px] text-indigo-300 uppercase tracking-wide truncate font-bold">{user?.caption || user?.role}</div>
                    </div>
-                   <div className="overflow-hidden">
-                       <div className="text-xs font-bold text-white truncate">{user?.username}</div>
-                       <div className="text-[10px] text-slate-400 uppercase tracking-wide truncate">{user?.role}</div>
-                   </div>
+                   <button onClick={logout} className="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors" title="Logout">
+                       <LogOut size={16} />
+                   </button>
                 </div>
-                <button onClick={logout} className="p-2 text-slate-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors">
-                    <LogOut size={16} />
-                </button>
+                
+                {(user?.email || user?.phoneNumber) && (
+                    <div className="pt-3 border-t border-white/5 space-y-1">
+                        {user.email && (
+                            <div className="flex items-center text-[10px] text-slate-400">
+                                <Mail size={10} className="mr-2 opacity-50"/> {user.email}
+                            </div>
+                        )}
+                        {user.phoneNumber && (
+                            <div className="flex items-center text-[10px] text-slate-400">
+                                <Phone size={10} className="mr-2 opacity-50"/> {user.phoneNumber}
+                            </div>
+                        )}
+                    </div>
+                )}
               </div>
             </div>
           </div>

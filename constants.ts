@@ -8,6 +8,16 @@ export const HOURLY_RATE = {
   [VehicleType.TRUCK]: 10,
 };
 
+export const SERVICES_DATA = [
+    { id: 'tyreChange', label: 'Tyre Changing', price: 2.99, icon: '🔧' },
+    { id: 'oilChange', label: 'Oil Changing', price: 4.99, icon: '🛢️' },
+    { id: 'keyReplace', label: 'Key Replacing', price: 14.99, icon: '🔑' },
+    { id: 'carWash', label: 'Car Washing', price: 3.99, icon: '🚿' },
+    { id: 'battery', label: 'Battery Services', price: 2.99, icon: '🔋' },
+    { id: 'electricRepair', label: 'Electrical System Repairing', price: 24.99, icon: '⚡' },
+    { id: 'fullCheckup', label: 'Full Check-up', price: 44.99, icon: '🩺' },
+];
+
 // Mock initial data populated with specific zones
 // Slots 1-20: Zone A (Premium/Near Entrance)
 // Slots 21-40: Zone B (Premium/Rear Section) - Now identical structure to A

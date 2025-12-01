@@ -3,7 +3,7 @@ import React from 'react';
 import { useParking } from '../store';
 import { TOTAL_SLOTS } from '../constants';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area, Legend } from 'recharts';
-import { Car, DollarSign, Clock, Percent, Activity, TrendingUp, Users, MapPin, Plus, ArrowRightCircle } from 'lucide-react';
+import { Car, DollarSign, Clock, Percent, Activity, TrendingUp, Users, MapPin, Plus, ArrowRightCircle, Building } from 'lucide-react';
 import { ActivityType, ViewState } from '../types';
 
 const StatCard: React.FC<{ 
@@ -58,12 +58,15 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { slots, activeVehicles, transactions, recentLogs } = useParking();
+  const { slots, activeVehicles, transactions, recentLogs, currentBranch } = useParking();
 
-  const occupiedCount = slots.filter(s => s.isOccupied).length;
-  const totalCurrentSlots = slots.length;
+  const isOverview = currentBranch?.id === 'all';
+
+  // In overview mode, slots logic is bypassed, use activeVehicles length for occupancy
+  const occupiedCount = isOverview ? activeVehicles.length : slots.filter(s => s.isOccupied).length;
+  const totalCurrentSlots = currentBranch?.capacity || 0;
   const availableCount = totalCurrentSlots - occupiedCount;
-  const occupancyRate = Math.round((occupiedCount / totalCurrentSlots) * 100);
+  const occupancyRate = totalCurrentSlots > 0 ? Math.round((occupiedCount / totalCurrentSlots) * 100) : 0;
   
   const todayRevenue = transactions
     .filter(t => t.exitTime.toDateString() === new Date().toDateString())
@@ -101,14 +104,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           icon={<Car size={24} />} 
           gradient="bg-gradient-to-br from-blue-600 to-indigo-700"
           subtext={`${availableCount} slots available`}
-          onClick={() => onNavigate('map')}
+          onClick={() => !isOverview && onNavigate('map')}
         />
         <StatCard 
           title="Daily Revenue" 
           value={`$${todayRevenue.toFixed(2)}`} 
           icon={<DollarSign size={24} />} 
           gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
-          subtext="+12% from yesterday"
+          subtext="Total across selected"
           onClick={() => onNavigate('history')}
         />
         <StatCard 
@@ -215,18 +218,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
                 <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                    <button 
-                        onClick={() => onNavigate('entry')}
-                        className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-800 hover:from-blue-100 hover:to-indigo-100 transition-all group shadow-sm"
-                    >
-                        <div className="text-left">
-                            <span className="font-bold block text-lg">Park Vehicle</span>
-                            <span className="text-xs text-blue-600 font-medium">Select slot & check-in</span>
+                    {isOverview ? (
+                        <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-sm">
+                            <Building size={24} className="mx-auto mb-2 text-slate-400" />
+                            Select a specific branch to perform operations like Vehicle Entry or Map Management.
                         </div>
-                        <div className="bg-white p-2.5 rounded-full shadow-md text-blue-600 group-hover:scale-110 transition-transform group-hover:text-indigo-600">
-                            <ArrowRightCircle size={24} />
-                        </div>
-                    </button>
+                    ) : (
+                        <button 
+                            onClick={() => onNavigate('entry')}
+                            className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-800 hover:from-blue-100 hover:to-indigo-100 transition-all group shadow-sm"
+                        >
+                            <div className="text-left">
+                                <span className="font-bold block text-lg">Park Vehicle</span>
+                                <span className="text-xs text-blue-600 font-medium">Select slot & check-in</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-full shadow-md text-blue-600 group-hover:scale-110 transition-transform group-hover:text-indigo-600">
+                                <ArrowRightCircle size={24} />
+                            </div>
+                        </button>
+                    )}
                     <div className="text-xs text-center text-slate-500 font-medium mt-2 bg-slate-100 py-1 rounded-lg">
                         {availableCount} slots currently available
                     </div>
