@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useParking } from '../store';
 import { Car, Bike, Truck, Info, X, Clock, DollarSign, Phone, Filter, MapPin, Check, Building } from 'lucide-react';
 import { VehicleType, ParkingSlot as ParkingSlotType } from '../types';
+import { SERVICES_DATA } from '../constants';
 
 type FilterType = 'all' | 'car' | 'bike' | 'truck' | 'occupied' | 'empty';
 
@@ -46,19 +47,6 @@ const ParkingLot: React.FC = () => {
   const handleSlotClick = (slot: ParkingSlotType) => {
     setSelectedSlot(slot);
     setShowReceipt(null);
-  };
-
-  const handleQuickCheckout = (vehicleId: string) => {
-    try {
-      const transaction = checkoutVehicle(vehicleId);
-      setShowReceipt({
-        plate: transaction.plateNumber,
-        amount: transaction.finalAmount,
-        duration: transaction.durationMinutes
-      });
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   const isSlotVisible = (slot: ParkingSlotType) => {
@@ -144,8 +132,9 @@ const ParkingLot: React.FC = () => {
     if (vehicle) {
         const now = new Date();
         const diffMs = now.getTime() - vehicle.entryTime.getTime();
-        const hours = Math.ceil(diffMs / (1000 * 60 * 60));
-        currentCost = hours * rates[vehicle.type];
+        const minutes = Math.ceil(diffMs / 60000);
+        // Cost per minute logic
+        currentCost = minutes * (rates[vehicle.type] / 60);
     }
 
     return (
@@ -165,99 +154,77 @@ const ParkingLot: React.FC = () => {
           </div>
 
           <div className="p-6">
-            {showReceipt ? (
-               <div className="text-center py-6">
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce-short shadow-lg shadow-green-200">
-                    <DollarSign size={32} />
-                  </div>
-                  <h4 className="text-xl font-bold text-slate-800 mb-2">Checkout Complete</h4>
-                  <p className="text-slate-500 mb-6">Payment processed successfully.</p>
-                  
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 text-left shadow-inner">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-slate-500 font-medium">Vehicle</span>
-                      <span className="font-bold text-slate-800">{showReceipt.plate}</span>
+            {selectedSlot.isOccupied && vehicle ? (
+                <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                        <div className="p-4 bg-indigo-50 rounded-full text-indigo-600 shadow-inner">
+                            {getVehicleIcon(vehicle.type)}
+                        </div>
+                        <div>
+                            <div className="text-sm text-slate-500 font-medium">Currently Parked</div>
+                            <div className="text-2xl font-bold text-slate-800 tracking-tight">{vehicle.plateNumber}</div>
+                            <div className="text-xs text-indigo-500 font-semibold bg-indigo-50 px-2 py-0.5 rounded inline-block mt-1">
+                                {vehicle.color} {vehicle.model}
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-slate-500 font-medium">Duration</span>
-                      <span className="font-bold text-slate-800">{showReceipt.duration} min</span>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <span className="text-xs text-slate-400 uppercase font-bold">Entry Time</span>
+                            <div className="font-semibold text-slate-700 mt-1 flex items-center">
+                                <Clock size={14} className="mr-1 text-slate-400"/>
+                                {vehicle.entryTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <span className="text-xs text-slate-400 uppercase font-bold">Current Bill</span>
+                            <div className="font-semibold text-slate-700 mt-1 flex items-center">
+                                <DollarSign size={14} className="mr-1 text-slate-400"/>
+                                {currentCost.toFixed(2)}
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
-                      <span className="font-bold text-slate-800">Total Charged</span>
-                      <span className="font-bold text-green-600 text-xl">${showReceipt.amount.toFixed(2)}</span>
-                    </div>
-                  </div>
-                  
-                  <button onClick={() => setSelectedSlot(null)} className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg">Close</button>
-               </div>
+
+                    {vehicle.contactNumber && (
+                            <div className="flex items-center text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                            <Phone size={16} className="mr-2 text-blue-500"/>
+                            <span className="font-bold mr-2">Contact:</span> {vehicle.contactNumber}
+                            </div>
+                    )}
+                    
+                    {vehicle.notes && (
+                            <div className="text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">
+                            <span className="font-bold not-italic text-amber-600 mr-1">Note:</span> {vehicle.notes}
+                            </div>
+                    )}
+
+                    {vehicle.requestedServices && vehicle.requestedServices.length > 0 && (
+                            <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                                <span className="text-xs text-indigo-500 uppercase font-bold mb-2 block">Requested Services</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {vehicle.requestedServices.map(sid => {
+                                        const service = SERVICES_DATA.find(s => s.id === sid);
+                                        return service ? (
+                                            <span key={sid} className="text-xs bg-white text-indigo-700 border border-indigo-200 px-2 py-1 rounded-md font-medium shadow-sm">
+                                                {service.label}
+                                            </span>
+                                        ) : null;
+                                    })}
+                                </div>
+                            </div>
+                    )}
+                </div>
             ) : (
-                <>
-                {selectedSlot.isOccupied && vehicle ? (
-                    <div className="space-y-6">
-                        <div className="flex items-center space-x-4">
-                            <div className="p-4 bg-indigo-50 rounded-full text-indigo-600 shadow-inner">
-                                {getVehicleIcon(vehicle.type)}
-                            </div>
-                            <div>
-                                <div className="text-sm text-slate-500 font-medium">Currently Parked</div>
-                                <div className="text-2xl font-bold text-slate-800 tracking-tight">{vehicle.plateNumber}</div>
-                                <div className="text-xs text-indigo-500 font-semibold bg-indigo-50 px-2 py-0.5 rounded inline-block mt-1">
-                                    {vehicle.color} {vehicle.model}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span className="text-xs text-slate-400 uppercase font-bold">Entry Time</span>
-                                <div className="font-semibold text-slate-700 mt-1 flex items-center">
-                                    <Clock size={14} className="mr-1 text-slate-400"/>
-                                    {vehicle.entryTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </div>
-                            </div>
-                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span className="text-xs text-slate-400 uppercase font-bold">Current Bill</span>
-                                <div className="font-semibold text-slate-700 mt-1 flex items-center">
-                                    <DollarSign size={14} className="mr-1 text-slate-400"/>
-                                    {currentCost.toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
-
-                        {vehicle.contactNumber && (
-                             <div className="flex items-center text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                <Phone size={16} className="mr-2 text-blue-500"/>
-                                <span className="font-bold mr-2">Contact:</span> {vehicle.contactNumber}
-                             </div>
-                        )}
-                        
-                        {vehicle.notes && (
-                             <div className="text-sm text-slate-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">
-                                <span className="font-bold not-italic text-amber-600 mr-1">Note:</span> {vehicle.notes}
-                             </div>
-                        )}
-
-                        <div className="pt-2">
-                            <button
-                                onClick={() => handleQuickCheckout(vehicle.id)}
-                                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-200 transition-colors flex items-center justify-center"
-                            >
-                                <DollarSign size={18} className="mr-2"/> Quick Checkout
-                            </button>
-                        </div>
+                <div className="text-center py-8">
+                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <Car size={32} className="text-slate-300"/>
                     </div>
-                ) : (
-                    <div className="text-center py-8">
-                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                            <Car size={32} className="text-slate-300"/>
-                        </div>
-                        <h4 className="text-lg font-bold text-slate-700">Slot is Empty</h4>
-                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center mt-4">
-                            <Check size={16} className="mr-2"/> Ready for use
-                        </div>
+                    <h4 className="text-lg font-bold text-slate-700">Slot is Empty</h4>
+                    <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center mt-4">
+                        <Check size={16} className="mr-2"/> Ready for use
                     </div>
-                )}
-                </>
+                </div>
             )}
           </div>
         </div>
