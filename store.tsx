@@ -326,9 +326,11 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const exitTime = new Date();
     const durationMs = exitTime.getTime() - vehicle.entryTime.getTime();
     const durationMinutes = Math.ceil(durationMs / 60000);
-    const hours = Math.ceil(durationMinutes / 60);
     
-    const baseAmount = hours * rates[vehicle.type];
+    // Per-minute billing logic: (Rate / 60) * minutes
+    const hourlyRate = rates[vehicle.type];
+    const baseAmount = durationMinutes * (hourlyRate / 60);
+
     const finalAmount = Math.max(0, baseAmount + extras.amount - discount);
 
     const transaction: Transaction = {
