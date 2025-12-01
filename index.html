@@ -22,34 +22,54 @@
 
       /* Print Styles */
       @media print {
+        @page {
+          margin: 0;
+          size: auto;
+        }
+        
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: white;
+          /* Ensure background colors/gradients print */
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Hide everything by default */
         body * {
           visibility: hidden;
         }
+        
+        /* Make printable content visible */
         .printable-content, .printable-content * {
           visibility: visible;
         }
+        
         .printable-content {
           position: absolute;
           left: 0;
           top: 0;
           width: 100%;
           margin: 0;
-          padding: 0;
+          padding: 2cm; /* Safe margin for content on standard A4/Letter */
           background: white !important;
           color: black !important;
           box-shadow: none !important;
           border: none !important;
           z-index: 9999;
+          
+          /* Reset transforms to ensure clean print layout */
+          transform: none !important;
         }
+        
         .no-print {
           display: none !important;
         }
+        
         /* Hide scrollbars during print */
         ::-webkit-scrollbar {
             display: none;
-        }
-        @page {
-          margin: 0.5cm;
         }
       }
     </style>

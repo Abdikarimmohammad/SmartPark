@@ -5,6 +5,21 @@ export enum VehicleType {
   TRUCK = 'Truck'
 }
 
+export type UserRole = 'admin' | 'staff';
+
+export interface Branch {
+  id: string;
+  name: string;
+  capacity: number;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  role: UserRole;
+  branchId?: string; // If staff, they are tied to a branch
+}
+
 export interface ParkingRates {
   [VehicleType.CAR]: number;
   [VehicleType.BIKE]: number;
@@ -13,10 +28,11 @@ export interface ParkingRates {
 
 export interface Vehicle {
   id: string;
+  branchId: string; // New field
   plateNumber: string;
   type: VehicleType;
-  model: string; // e.g. Toyota Camry
-  color: string; // e.g. Silver
+  model: string; 
+  color: string; 
   entryTime: Date;
   slotId: number;
   contactNumber?: string;
@@ -32,6 +48,7 @@ export interface ParkingSlot {
 
 export interface Transaction {
   id: string;
+  branchId: string; // New field
   vehicleId: string;
   plateNumber: string;
   vehicleType: VehicleType;
@@ -43,13 +60,14 @@ export interface Transaction {
   discountAmount: number;
   finalAmount: number;
   status: 'paid';
-  items?: string[]; // e.g., "Car Wash", "Lost Ticket"
+  items?: string[]; 
 }
 
 export type ActivityType = 'entry' | 'exit' | 'system';
 
 export interface ActivityLog {
   id: string;
+  branchId: string;
   type: ActivityType;
   message: string;
   timestamp: Date;
