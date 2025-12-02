@@ -264,6 +264,10 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateUser = (id: string, userData: Partial<User>) => {
       setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...userData } : u));
+      // If the currently logged in user is being updated, update the session state too.
+      if (user && user.id === id) {
+          setUser(prev => prev ? { ...prev, ...userData } : null);
+      }
   };
 
   const removeUser = (userId: string) => {

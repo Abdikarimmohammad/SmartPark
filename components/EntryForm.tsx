@@ -209,12 +209,12 @@ const EntryForm: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-1 md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">License Plate Number</label>
+                        <label className="block text-sm font-bold text-slate-900 mb-1">License Plate Number</label>
                         <input
                             type="text"
                             value={plate}
                             onChange={(e) => setPlate(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all uppercase placeholder:normal-case font-mono text-lg tracking-wider bg-slate-50 focus:bg-white"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all uppercase placeholder:normal-case font-mono text-lg tracking-wider bg-white text-slate-900"
                             placeholder="e.g. ABC-1234"
                             required
                             autoFocus
@@ -222,29 +222,29 @@ const EntryForm: React.FC = () => {
                     </div>
                     
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center"><CarFront size={16} className="mr-1 text-slate-400"/> Model</label>
+                        <label className="block text-sm font-bold text-slate-900 mb-1 flex items-center"><CarFront size={16} className="mr-1 text-slate-400"/> Model</label>
                         <input
                             type="text"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
                             placeholder="e.g. Toyota Camry"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center"><Palette size={16} className="mr-1 text-slate-400"/> Color</label>
+                        <label className="block text-sm font-bold text-slate-900 mb-1 flex items-center"><Palette size={16} className="mr-1 text-slate-400"/> Color</label>
                         <input
                             type="text"
                             value={color}
                             onChange={(e) => setColor(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
                             placeholder="e.g. Silver"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Classification</label>
+                    <label className="block text-sm font-bold text-slate-900 mb-2">Classification</label>
                     <div className="grid grid-cols-3 gap-3">
                         {Object.values(VehicleType).map((vType) => (
                         <button
@@ -337,22 +337,22 @@ const EntryForm: React.FC = () => {
             {/* Section 3: Extra Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center"><Phone size={16} className="mr-1 text-slate-400"/> Driver Contact (Optional)</label>
+                    <label className="block text-sm font-bold text-slate-900 mb-1 flex items-center"><Phone size={16} className="mr-1 text-slate-400"/> Driver Contact (Optional)</label>
                     <input
                         type="tel"
                         value={contact}
                         onChange={(e) => setContact(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
                         placeholder="Mobile Number"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center"><FileText size={16} className="mr-1 text-slate-400"/> Notes (Optional)</label>
+                    <label className="block text-sm font-bold text-slate-900 mb-1 flex items-center"><FileText size={16} className="mr-1 text-slate-400"/> Notes (Optional)</label>
                     <input
                         type="text"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
                         placeholder="e.g. Parked near pillar"
                     />
                 </div>

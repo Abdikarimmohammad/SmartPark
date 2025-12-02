@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParking } from '../store';
 import { GoogleGenAI } from "@google/genai";
@@ -75,7 +76,7 @@ const AIAssistant: React.FC = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="e.g., 'How many cars are parked right now?' or 'What is the revenue today?'"
-            className="w-full pl-6 pr-14 py-4 rounded-full text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-white/20 shadow-xl"
+            className="w-full pl-6 pr-14 py-4 rounded-full bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-white/20 shadow-xl"
           />
           <button 
             type="submit" 

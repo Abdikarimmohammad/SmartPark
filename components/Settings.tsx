@@ -141,6 +141,18 @@ const Settings: React.FC = () => {
 
   const handleUserSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      
+      // Validation: Check username uniqueness (exclude self if editing)
+      const duplicateUser = allUsers.find(u => 
+        u.username.toLowerCase() === userForm.username.toLowerCase() && 
+        u.id !== editingUserId
+      );
+
+      if (duplicateUser) {
+          setFeedback({ type: 'error', message: 'Username is already taken. Please choose another.' });
+          return;
+      }
+
       if (editingUserId) {
           updateUser(editingUserId, userForm);
           setFeedback({ type: 'success', message: `User ${userForm.username} updated.` });
@@ -201,7 +213,7 @@ const Settings: React.FC = () => {
              <form onSubmit={handleVerify} className="p-6">
                <p className="text-slate-600 text-sm mb-4 text-center">Enter Admin PIN (Default: 1234)</p>
                {error && <div className="bg-red-50 text-red-600 text-sm p-2 mb-4 rounded border border-red-100">{error}</div>}
-               <input type="password" value={pin} onChange={e => setPin(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 text-center text-2xl tracking-widest font-mono mb-4" placeholder="****" maxLength={4} autoFocus />
+               <input type="password" value={pin} onChange={e => setPin(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 text-center text-2xl tracking-widest font-mono mb-4" placeholder="****" maxLength={4} autoFocus />
                <button type="submit" className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-lg">Verify</button>
              </form>
            </div>
@@ -219,13 +231,13 @@ const Settings: React.FC = () => {
                  <form onSubmit={handleBranchSubmit} className="p-6 overflow-y-auto custom-scrollbar">
                      <div className="grid grid-cols-2 gap-4 mb-6">
                          <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Branch ID</label>
-                             <input type="text" value={branchForm.id} onChange={e => setBranchForm({...branchForm, id: e.target.value})} disabled={!!editingBranchId} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100" placeholder="e.g. b1" required />
+                             <label className="block text-xs font-bold text-slate-900 uppercase mb-1">Branch ID</label>
+                             <input type="text" value={branchForm.id} onChange={e => setBranchForm({...branchForm, id: e.target.value})} disabled={!!editingBranchId} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100" placeholder="e.g. b1" required />
                              <p className="text-xs text-slate-400 mt-1">Unique Identifier</p>
                          </div>
                          <div>
-                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Branch Name</label>
-                             <input type="text" value={branchForm.name} onChange={e => setBranchForm({...branchForm, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Downtown" required />
+                             <label className="block text-xs font-bold text-slate-900 uppercase mb-1">Branch Name</label>
+                             <input type="text" value={branchForm.name} onChange={e => setBranchForm({...branchForm, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Downtown" required />
                          </div>
                      </div>
                      
@@ -236,9 +248,9 @@ const Settings: React.FC = () => {
                      <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                          {branchForm.zones.map((zone, idx) => (
                              <div key={idx} className="flex gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                                 <input type="text" value={zone.name} onChange={e => updateZone(idx, 'name', e.target.value)} className="flex-1 px-3 py-2 rounded border border-slate-300 text-sm" placeholder="Zone Name" required />
-                                 <input type="number" value={zone.capacity} onChange={e => updateZone(idx, 'capacity', parseInt(e.target.value))} className="w-20 px-3 py-2 rounded border border-slate-300 text-sm" placeholder="Cap" required min="1"/>
-                                 <select value={zone.type} onChange={e => updateZone(idx, 'type', e.target.value)} className="w-28 px-2 py-2 rounded border border-slate-300 text-sm bg-white">
+                                 <input type="text" value={zone.name} onChange={e => updateZone(idx, 'name', e.target.value)} className="flex-1 px-3 py-2 rounded border border-slate-300 text-sm bg-white text-slate-900" placeholder="Zone Name" required />
+                                 <input type="number" value={zone.capacity} onChange={e => updateZone(idx, 'capacity', parseInt(e.target.value))} className="w-20 px-3 py-2 rounded border border-slate-300 text-sm bg-white text-slate-900" placeholder="Cap" required min="1"/>
+                                 <select value={zone.type} onChange={e => updateZone(idx, 'type', e.target.value)} className="w-28 px-2 py-2 rounded border border-slate-300 text-sm bg-white text-slate-900">
                                      <option value="standard">Standard</option>
                                      <option value="priority">Priority</option>
                                  </select>
@@ -269,7 +281,7 @@ const Settings: React.FC = () => {
                  <div className="flex gap-6 flex-col md:flex-row">
                      {/* Avatar Upload */}
                      <div className="flex flex-col items-center space-y-3">
-                         <div className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 relative group">
+                         <div className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-white relative group">
                              {userForm.avatarUrl ? (
                                  <img src={userForm.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
                              ) : (
@@ -286,11 +298,11 @@ const Settings: React.FC = () => {
                      <div className="flex-1 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                                <input type="text" required value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} disabled={!!editingUserId} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100" />
+                                <label className="block text-sm font-bold text-slate-900 mb-1">Username</label>
+                                <input type="text" required value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                <label className="block text-sm font-bold text-slate-900 mb-1">Role</label>
                                 <select 
                                     value={userForm.role} 
                                     onChange={e => {
@@ -301,7 +313,7 @@ const Settings: React.FC = () => {
                                             branchId: newRole === 'admin' ? '' : (branches[0]?.id || '')
                                         });
                                     }} 
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                     <option value="staff">Staff</option>
                                     <option value="admin">Admin</option>
@@ -310,27 +322,27 @@ const Settings: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                                <input type="text" value={userForm.fullName} onChange={e => setUserForm({...userForm, fullName: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none" />
+                                <label className="block text-sm font-bold text-slate-900 mb-1">Full Name</label>
+                                <input type="text" value={userForm.fullName} onChange={e => setUserForm({...userForm, fullName: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none" />
                             </div>
                              <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Job Title</label>
-                                <input type="text" value={userForm.caption} onChange={e => setUserForm({...userForm, caption: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none" placeholder="e.g. Manager" />
+                                <label className="block text-sm font-bold text-slate-900 mb-1">Job Title</label>
+                                <input type="text" value={userForm.caption} onChange={e => setUserForm({...userForm, caption: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none" placeholder="e.g. Manager" />
                             </div>
                         </div>
                         
                         {userForm.role === 'staff' && (
                             <div>
-                                 <label className="block text-sm font-medium text-slate-700 mb-1">Assigned Branch</label>
-                                 <select value={userForm.branchId} onChange={e => setUserForm({...userForm, branchId: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500">
+                                 <label className="block text-sm font-bold text-slate-900 mb-1">Assigned Branch</label>
+                                 <select value={userForm.branchId} onChange={e => setUserForm({...userForm, branchId: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500">
                                      {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                  </select>
                             </div>
                         )}
 
                         <div className="grid grid-cols-2 gap-4">
-                             <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 text-sm" placeholder="Email" />
-                             <input type="tel" value={userForm.phoneNumber} onChange={e => setUserForm({...userForm, phoneNumber: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 text-sm" placeholder="Phone" />
+                             <input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm" placeholder="Email" />
+                             <input type="tel" value={userForm.phoneNumber} onChange={e => setUserForm({...userForm, phoneNumber: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm" placeholder="Phone" />
                         </div>
                      </div>
                  </div>
@@ -440,10 +452,10 @@ const Settings: React.FC = () => {
             <div className="p-6 space-y-4">
                 {Object.values(VehicleType).map((type) => (
                     <div key={type} className="flex items-center justify-between">
-                        <label className="font-medium text-slate-600 w-1/3">{type}</label>
+                        <label className="font-medium text-slate-900 w-1/3">{type}</label>
                         <div className="flex items-center relative w-2/3">
                             <span className="absolute left-3 text-slate-400">$</span>
-                            <input type="number" min="0" step="0.5" value={editingRates[type]} onChange={(e) => handleRateChange(type, e.target.value)} className="w-full pl-7 pr-4 py-2 rounded-lg border border-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                            <input type="number" min="0" step="0.5" value={editingRates[type]} onChange={(e) => handleRateChange(type, e.target.value)} className="w-full pl-7 pr-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
                             <span className="ml-2 text-slate-400 text-sm">/hr</span>
                         </div>
                     </div>

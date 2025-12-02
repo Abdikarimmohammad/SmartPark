@@ -152,7 +152,7 @@ const ExitList: React.FC = () => {
                  {/* Discount Slider */}
                  <div className="mb-8">
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Apply Discount</label>
+                        <label className="text-xs font-bold text-slate-900 uppercase tracking-widest">Apply Discount</label>
                         <span className="text-indigo-600 font-bold">{discountPercent}%</span>
                     </div>
                     <input 
@@ -290,7 +290,7 @@ const ExitList: React.FC = () => {
                     placeholder="Search by License Plate..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-sm bg-slate-50 focus:bg-white uppercase font-mono"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-sm bg-white text-slate-900 uppercase font-mono"
                 />
             </div>
 

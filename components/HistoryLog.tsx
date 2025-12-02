@@ -95,35 +95,35 @@ const HistoryLog: React.FC = () => {
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end md:items-center justify-between no-print">
           <div className="flex flex-col md:flex-row gap-4 w-full">
             <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Date From</label>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 ml-1">Date From</label>
                 <div className="relative">
                     <Calendar className="absolute left-3 top-2.5 text-slate-400" size={16}/>
                     <input 
                         type="date" 
                         value={dateStart}
                         onChange={(e) => setDateStart(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-white text-slate-900 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                 </div>
             </div>
             <div className="flex-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Date To</label>
+                <label className="block text-xs font-bold text-slate-900 uppercase mb-1 ml-1">Date To</label>
                  <div className="relative">
                     <Calendar className="absolute left-3 top-2.5 text-slate-400" size={16}/>
                     <input 
                         type="date" 
                         value={dateEnd}
                         onChange={(e) => setDateEnd(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-white text-slate-900 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                 </div>
             </div>
             <div className="w-full md:w-48">
-                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Vehicle Type</label>
+                 <label className="block text-xs font-bold text-slate-900 uppercase mb-1 ml-1">Vehicle Type</label>
                  <select 
                     value={selectedType}
                     onChange={(e) => setSelectedType(e.target.value as VehicleType | 'All')}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-white text-slate-900 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                  >
                      <option value="All">All Types</option>
                      {Object.values(VehicleType).map(t => <option key={t} value={t}>{t}</option>)}

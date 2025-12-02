@@ -35,12 +35,12 @@ const LoginScreen: React.FC = () => {
                 
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Username</label>
+                        <label className="block text-sm font-bold text-slate-900 mb-2">Username</label>
                         <input 
                             type="text" 
                             value={username}
                             onChange={e => { setUsername(e.target.value); setError(false); }}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-600 outline-none"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm"
                             placeholder="e.g. admin, staff_downtown"
                             autoFocus
                         />
